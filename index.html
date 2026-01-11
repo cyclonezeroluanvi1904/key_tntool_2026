@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TNTOOL — Get Key</title>
+
+<style>
+  :root{--bg:#020204;--panel:#04110a;--accent:#00ff6a;--muted:#6fbf9a}
+  html,body{height:100%;margin:0;font-family:Inter, ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;background:radial-gradient(circle at 10% 10%, #001611, #000000 40%);color:#cfeee1}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{width:760px;max-width:92vw;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:14px;padding:28px;border:1px solid rgba(0,255,106,0.06);box-shadow:0 12px 50px rgba(0,0,0,0.7);display:flex;gap:20px;align-items:center}
+  .logo{width:140px;height:140px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:18px;background:linear-gradient(135deg,#00120a,#00221a);box-shadow:0 8px 40px rgba(0,255,106,0.06), inset 0 -8px 22px rgba(0,0,0,0.6);overflow:hidden}
+  .logo img{width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 6px 20px rgba(0,255,106,0.08))}
+  .body{flex:1}
+  .title{font-size:18px;margin:0 0 6px;letter-spacing:1px;font-weight:bold;color:var(--accent)}
+  .subtitle{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .key-box{background:#001610;padding:18px;border-radius:10px;border:1px solid rgba(0,255,106,0.2);font-family:monospace;font-size:18px;word-break:break-all;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .key-text{flex:1;color:#bfffd5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .btn{background:linear-gradient(90deg,#00ff6a,#07b47a);border:none;padding:10px 18px;border-radius:8px;color:#001a10;font-weight:700;cursor:pointer;margin-left:8px;transition:.3s}
+  .btn:hover{box-shadow:0 0 15px var(--accent)}
+  .small{font-size:12px;color:var(--muted);margin-top:10px}
+
+  @keyframes neon{0%,100%{text-shadow:0 0 6px rgba(0,255,106,.6)}50%{text-shadow:0 0 18px rgba(0,255,106,.95)}}
+  .title{animation:neon 3s infinite ease-in-out}
+
+  @media (max-width:680px){
+    .card{flex-direction:column;text-align:center}
+    .logo{width:100px;height:100px;margin:0 auto}
+    .key-box{font-size:14px;flex-direction:column}
+    .btn{width:100%;margin:10px 0 0}
+  }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="logo">
+      <img src="z7255324665277_4785a2f455cfab3f7c32257523bfa2d3.jpg"
+           alt="TNTOOL logo"
+           onerror="this.style.display='none';this.parentNode.innerText='TN'">
+    </div>
+
+    <div class="body">
+      <h2 class="title">TNTOOL VERIFY</h2>
+      <p class="subtitle">HỆ THỐNG XÁC THỰC & LẤY KEY TỰ ĐỘNG</p>
+
+      <div class="key-box">
+        <div class="key-text" id="keyText">Đang kiểm tra...</div>
+        <button class="btn" id="copyBtn">COPY KEY</button>
+      </div>
+
+      <div class="small">TN TOOL <code>CHÍNH</code> HÃNG &copy; 2025</div>
+    </div>
+  </div>
+</div>
+
+<!-- CryptoJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<script>
+window.onload = function () {
+    const params = new URLSearchParams(window.location.search);
+    const encryptedKey = params.get("key");
+    const display = document.getElementById("keyText");
+
+    if (!encryptedKey) {
+        display.innerText = "Lỗi: Không tìm thấy Key trên Link!";
+        display.style.color = "#ff5555";
+        return;
+    }
+
+    try {
+        // ⚠️ PHẢI GIỐNG PYTHON
+        const SECRET_KEY = CryptoJS.enc.Utf8.parse("TNTOOL_SUPER_SECRET_32BYTE!!");
+        const IV = CryptoJS.enc.Utf8.parse("TNTOOL_16BYTE_IV");
+
+        const decrypted = CryptoJS.AES.decrypt(
+            decodeURIComponent(encryptedKey),
+            SECRET_KEY,
+            {
+                iv: IV,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            }
+        );
+
+        const realKey = decrypted.toString(CryptoJS.enc.Utf8);
+
+        if (!realKey) throw "fail";
+
+        display.innerText = realKey;
+        display.style.color = "#bfffd5";
+
+    } catch (e) {
+        display.innerText = "Key không hợp lệ hoặc đã bị sửa!";
+        display.style.color = "#ff5555";
+    }
+};
+
+// COPY
+document.getElementById("copyBtn").onclick = function () {
+    const text = document.getElementById("keyText").innerText;
+
+    if (text.includes("Lỗi") || text.includes("Đang kiểm tra")) {
+        alert("Không có key hợp lệ!");
+        return;
+    }
+
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = this;
+        const old = btn.innerText;
+        btn.innerText = "ĐÃ COPY!";
+        btn.style.background = "#fff";
+
+        setTimeout(() => {
+            btn.innerText = old;
+            btn.style.background = "linear-gradient(90deg,#00ff6a,#07b47a)";
+        }, 1500);
+    });
+};
+</script>
+</body>
+</html>
