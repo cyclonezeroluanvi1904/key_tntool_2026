@@ -62,53 +62,57 @@
 <script>
 const SECRET = "TNTOOL_SECRET_2025";
 
-async function hmacSHA256(key, msg) {
-    const enc = new TextEncoder();
-    const cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        enc.encode(key),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
-    );
-    return new Uint8Array(await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(msg)));
+async function sha256(data) {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(data)
+  );
+  return new Uint8Array(buf);
 }
 
-async function decrypt(encoded) {
-    const raw = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+async function keystream(len) {
+  let out = new Uint8Array(len);
+  let pos = 0;
+  let i = 0;
+
+  while (pos < len) {
+    const hash = await sha256(SECRET + i.toString());
+    for (let b of hash) {
+      if (pos >= len) break;
+      out[pos++] = b;
+    }
+    i++;
+  }
+  return out;
+}
+
+window.onload = async () => {
+  const params = new URLSearchParams(location.search);
+  const key = params.get("key");
+  const display = document.getElementById("keyText");
+
+  if (!key) {
+    display.innerText = "Lỗi: Không tìm thấy Key!";
+    display.style.color = "#ff5555";
+    return;
+  }
+
+  try {
+    const raw = atob(key.replace(/-/g, "+").replace(/_/g, "/"));
     const data = Uint8Array.from(raw, c => c.charCodeAt(0));
+    const ks = await keystream(data.length);
 
-    const ks = await hmacSHA256(SECRET, new TextDecoder().decode(data));
-
-    let out = "";
-    for (let i = 0; i < data.length; i++) {
-        out += String.fromCharCode(data[i] ^ ks[i % ks.length]);
-    }
-    return out;
-}
-
-window.onload = async function () {
-    const params = new URLSearchParams(location.search);
-    const key = params.get("key");
-    const display = document.getElementById("keyText");
-
-    if (!key) {
-        display.innerText = "Lỗi: Không tìm thấy Key!";
-        display.style.color = "#ff5555";
-        return;
-    }
-
-    try {
-        const realKey = await decrypt(key);
-        display.innerText = realKey;
-        display.style.color = "#bfffd5";
-    } catch {
-        display.innerText = "Key không hợp lệ!";
-        display.style.color = "#ff5555";
-    }
+    const dec = data.map((b, i) => b ^ ks[i]);
+    display.innerText = new TextDecoder().decode(dec);
+    display.style.color = "#bfffd5";
+  } catch (e) {
+    display.innerText = "Key không hợp lệ!";
+    display.style.color = "#ff5555";
+  }
 };
 </script>
 
 </body>
 </html>
+
 
