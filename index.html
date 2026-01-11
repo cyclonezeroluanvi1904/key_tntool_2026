@@ -51,7 +51,7 @@
         <button class="btn" id="copyBtn">COPY KEY</button>
       </div>
 
-      <div class="small">TN TOOL <code>CHÍNH</code> HÃNG &copy; 2025</div>
+      <div class="small">TN TOOL <code>CHÍNH</code> HÃNG &copy; 2026</div>
     </div>
   </div>
 </div>
@@ -60,7 +60,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <script>
-const SECRET = "TNTOOL_SECRET_2025";
+const SECRET = "TNTOOL_SECRET_2026_3_admin_dep_zai_041819";
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest(
@@ -76,7 +76,7 @@ async function keystream(len) {
   let i = 0;
 
   while (pos < len) {
-    const hash = await sha256(`${SECRET}:${i}`);
+    const hash = await sha256(SECRET + ":" + i);
     for (let b of hash) {
       if (pos >= len) break;
       out[pos++] = b;
@@ -86,7 +86,7 @@ async function keystream(len) {
   return out;
 }
 
-window.onload = async () => {
+window.addEventListener("load", async () => {
   const params = new URLSearchParams(window.location.search);
   const keyParam = params.get("key");
   const display = document.getElementById("keyText");
@@ -101,7 +101,6 @@ window.onload = async () => {
     const raw = atob(keyParam.replace(/-/g, "+").replace(/_/g, "/"));
     const data = Uint8Array.from(raw, c => c.charCodeAt(0));
     const ks = await keystream(data.length);
-
     const dec = data.map((b, i) => b ^ ks[i]);
     const text = new TextDecoder("utf-8", { fatal: true }).decode(dec);
 
@@ -111,10 +110,9 @@ window.onload = async () => {
     display.innerText = "Key không hợp lệ!";
     display.style.color = "#ff5555";
   }
-};
+});
 
-// COPY FIX (CHẮC CHẮN CHẠY)
-<script>
+// COPY BUTTON
 const copyBtn = document.getElementById("copyBtn");
 const keyTextEl = document.getElementById("keyText");
 
@@ -129,9 +127,7 @@ copyBtn.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(text);
 
-    // HIỆU ỨNG THÀNH CÔNG
     const oldText = copyBtn.innerText;
-    const oldBg = copyBtn.style.background;
 
     copyBtn.innerText = "ĐÃ COPY!";
     copyBtn.style.background = "#ffffff";
@@ -152,11 +148,11 @@ copyBtn.addEventListener("click", async () => {
 });
 </script>
 
-</script>
 
 
 </body>
 </html>
+
 
 
 
