@@ -114,19 +114,50 @@ window.onload = async () => {
 };
 
 // COPY FIX (CHẮC CHẮN CHẠY)
-document.getElementById("copyBtn").onclick = () => {
-  const text = document.getElementById("keyText").innerText;
-  if (!text || text.includes("Lỗi")) {
+<script>
+const copyBtn = document.getElementById("copyBtn");
+const keyTextEl = document.getElementById("keyText");
+
+copyBtn.addEventListener("click", async () => {
+  const text = keyTextEl.innerText;
+
+  if (!text || text.includes("Lỗi") || text.includes("Đang")) {
     alert("Không có key hợp lệ để copy!");
     return;
   }
-  navigator.clipboard.writeText(text);
-};
+
+  try {
+    await navigator.clipboard.writeText(text);
+
+    // HIỆU ỨNG THÀNH CÔNG
+    const oldText = copyBtn.innerText;
+    const oldBg = copyBtn.style.background;
+
+    copyBtn.innerText = "ĐÃ COPY!";
+    copyBtn.style.background = "#ffffff";
+    copyBtn.style.color = "#000";
+    copyBtn.style.boxShadow = "0 0 18px #00ff6a";
+
+    setTimeout(() => {
+      copyBtn.innerText = oldText;
+      copyBtn.style.background =
+        "linear-gradient(90deg,#00ff6a,#07b47a)";
+      copyBtn.style.color = "#001a10";
+      copyBtn.style.boxShadow = "none";
+    }, 1500);
+
+  } catch (e) {
+    alert("Copy thất bại!");
+  }
+});
+</script>
+
 </script>
 
 
 </body>
 </html>
+
 
 
 
