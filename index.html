@@ -60,66 +60,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <script>
-window.onload = function () {
-    const params = new URLSearchParams(window.location.search);
-    const encryptedKey = params.get("key");
+const SECRET = "TNTOOL_SECRET_2025";
+
+async function hmacSHA256(key, msg) {
+    const enc = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(key),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+    );
+    return new Uint8Array(await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(msg)));
+}
+
+async function decrypt(encoded) {
+    const raw = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+    const data = Uint8Array.from(raw, c => c.charCodeAt(0));
+
+    const ks = await hmacSHA256(SECRET, new TextDecoder().decode(data));
+
+    let out = "";
+    for (let i = 0; i < data.length; i++) {
+        out += String.fromCharCode(data[i] ^ ks[i % ks.length]);
+    }
+    return out;
+}
+
+window.onload = async function () {
+    const params = new URLSearchParams(location.search);
+    const key = params.get("key");
     const display = document.getElementById("keyText");
 
-    if (!encryptedKey) {
-        display.innerText = "Lỗi: Không tìm thấy Key trên Link!";
+    if (!key) {
+        display.innerText = "Lỗi: Không tìm thấy Key!";
         display.style.color = "#ff5555";
         return;
     }
 
     try {
-        // ⚠️ PHẢI GIỐNG PYTHON
-        const SECRET_KEY = CryptoJS.enc.Utf8.parse("TNTOOL_SUPER_SECRET_32BYTE!!");
-        const IV = CryptoJS.enc.Utf8.parse("TNTOOL_16BYTE_IV");
-
-        const decrypted = CryptoJS.AES.decrypt(
-            decodeURIComponent(encryptedKey),
-            SECRET_KEY,
-            {
-                iv: IV,
-                mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
-            }
-        );
-
-        const realKey = decrypted.toString(CryptoJS.enc.Utf8);
-
-        if (!realKey) throw "fail";
-
+        const realKey = await decrypt(key);
         display.innerText = realKey;
         display.style.color = "#bfffd5";
-
-    } catch (e) {
-        display.innerText = "Key không hợp lệ hoặc đã bị sửa!";
+    } catch {
+        display.innerText = "Key không hợp lệ!";
         display.style.color = "#ff5555";
     }
 };
-
-// COPY
-document.getElementById("copyBtn").onclick = function () {
-    const text = document.getElementById("keyText").innerText;
-
-    if (text.includes("Lỗi") || text.includes("Đang kiểm tra")) {
-        alert("Không có key hợp lệ!");
-        return;
-    }
-
-    navigator.clipboard.writeText(text).then(() => {
-        const btn = this;
-        const old = btn.innerText;
-        btn.innerText = "ĐÃ COPY!";
-        btn.style.background = "#fff";
-
-        setTimeout(() => {
-            btn.innerText = old;
-            btn.style.background = "linear-gradient(90deg,#00ff6a,#07b47a)";
-        }, 1500);
-    });
-};
 </script>
+
 </body>
 </html>
+
