@@ -62,10 +62,10 @@
 <script>
 const SECRET = "TNTOOL_SECRET_2025";
 
-async function sha256(data) {
+async function sha256(str) {
   const buf = await crypto.subtle.digest(
     "SHA-256",
-    new TextEncoder().encode(data)
+    new TextEncoder().encode(str)
   );
   return new Uint8Array(buf);
 }
@@ -76,7 +76,7 @@ async function keystream(len) {
   let i = 0;
 
   while (pos < len) {
-    const hash = await sha256(SECRET + i.toString());
+    const hash = await sha256(`${SECRET}:${i}`);
     for (let b of hash) {
       if (pos >= len) break;
       out[pos++] = b;
@@ -87,32 +87,46 @@ async function keystream(len) {
 }
 
 window.onload = async () => {
-  const params = new URLSearchParams(location.search);
-  const key = params.get("key");
+  const params = new URLSearchParams(window.location.search);
+  const keyParam = params.get("key");
   const display = document.getElementById("keyText");
 
-  if (!key) {
+  if (!keyParam) {
     display.innerText = "Lỗi: Không tìm thấy Key!";
     display.style.color = "#ff5555";
     return;
   }
 
   try {
-    const raw = atob(key.replace(/-/g, "+").replace(/_/g, "/"));
+    const raw = atob(keyParam.replace(/-/g, "+").replace(/_/g, "/"));
     const data = Uint8Array.from(raw, c => c.charCodeAt(0));
     const ks = await keystream(data.length);
 
     const dec = data.map((b, i) => b ^ ks[i]);
-    display.innerText = new TextDecoder().decode(dec);
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(dec);
+
+    display.innerText = text;
     display.style.color = "#bfffd5";
   } catch (e) {
     display.innerText = "Key không hợp lệ!";
     display.style.color = "#ff5555";
   }
 };
+
+// COPY FIX (CHẮC CHẮN CHẠY)
+document.getElementById("copyBtn").onclick = () => {
+  const text = document.getElementById("keyText").innerText;
+  if (!text || text.includes("Lỗi")) {
+    alert("Không có key hợp lệ để copy!");
+    return;
+  }
+  navigator.clipboard.writeText(text);
+};
 </script>
+
 
 </body>
 </html>
+
 
 
